@@ -381,33 +381,7 @@ def login_interface():
 
 def main():
     st.set_page_config(layout="wide", page_title="PortfoliX", page_icon = "style/blazon.png")
-    st.markdown(
-    """
-    <style>
-    body {
-        background-color: #FFFFFF; /* Fond de la page en blanc */
-        color: #333333; /* Couleur du texte principal (gris très foncé) pour un bon contraste */
-    }
-    .stApp {
-        background-color: #FFFFFF; /* Fond de l'application en blanc */
-    }
-    .stSidebar {
-        background-color: #F0F0F0; /* Barre latérale en gris clair */
-        color: #333333; /* Couleur du texte dans la barre latérale (gris très foncé) */
-    }
-    #header-bar {
-        background-color: #004080;
-        color: white; /* Conserver le texte de l'en-tête en blanc */
-        padding: 10px;
-        border-radius: 6px;
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.9rem;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-    )
+   
     
     if "authenticated" not in st.session_state:
         st.session_state["authenticated"] = False
