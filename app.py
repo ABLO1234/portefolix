@@ -328,7 +328,9 @@ USERS = {
     "analyste": "portefeuille2025",
     "mahamane" : "korobara",
     "salimata" : "jolie",
-    "kader" : "bassoro"
+    "kader" : "bassoro",
+    "haoussa" : "korobara",
+    "garba" : "garbiss"
 }
 
 import base64
