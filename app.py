@@ -327,7 +327,7 @@ USERS = {
     "admin": "ablo",
     "analyste": "portefeuille2025",
     "mahamane" : "korobara",
-    "salimata : "jolie",
+    "salimata" : "jolie",
     "kader" : "bassoro"
 }
 
