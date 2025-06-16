@@ -381,6 +381,27 @@ def login_interface():
 
 def main():
     st.set_page_config(layout="wide", page_title="PortfoliX", page_icon = "style/blazon.png")
+    st.markdown(
+    """
+    <style>
+    body {
+        background-color: #FFFFFF ;
+    }
+    .stApp {
+        background-color:#FFFFFF ;
+    }
+    #header-bar {
+        background-color: #004080;
+        color: white;
+        padding: 10px;
+        border-radius: 6px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True)
     
     if "authenticated" not in st.session_state:
         st.session_state["authenticated"] = False
