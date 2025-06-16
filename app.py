@@ -385,10 +385,13 @@ def main():
     """
     <style>
     body {
-        background-color: #FFFFFF ;
+        background-color: #FFFFFF; /* Fond de la page en blanc */
     }
     .stApp {
-        background-color:#FFFFFF ;
+        background-color: #FFFFFF; /* Fond de l'application en blanc */
+    }
+    .stSidebar {
+        background-color: #F0F0F0; /* Barre latérale en gris clair */
     }
     #header-bar {
         background-color: #004080;
