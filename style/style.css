@@ -1,4 +1,11 @@
 /* ----- Style Global ----- */
+[theme]
+base = "light"
+primaryColor = "#1f77b4"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f0f2f6"
+textColor = "#000000"
+font = "sans serif"
 body {
     background-color: #f9f9fa;
     font-family: "Segoe UI", sans-serif;
@@ -73,11 +80,5 @@ div[data-testid="stTooltip"] {
 }
 
 
-[theme]
-base = "light"
-primaryColor = "#1f77b4"
-backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f0f2f6"
-textColor = "#000000"
-font = "sans serif"
+
 
