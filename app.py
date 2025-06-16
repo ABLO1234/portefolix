@@ -326,7 +326,9 @@ def send_mail(mail, weights_df, rendement, volatilite, sharpe):
 USERS = {
     "admin": "ablo",
     "analyste": "portefeuille2025",
-    "mahamane" : "korobara"
+    "mahamane" : "korobara",
+    "salimata : "jolie",
+    "kader" : "bassoro"
 }
 
 import base64
