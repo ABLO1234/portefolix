@@ -1,0 +1,40 @@
+# Environnement virtuel
+venv/
+.env/
+.venv/
+
+# Fichiers de configuration IDE
+.vscode/
+.idea/
+
+# Fichiers compilés Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Fichiers de log
+*.log
+
+# Données temporaires
+*.csv
+*.xlsx
+*.db
+*.sqlite
+
+# Cache Streamlit
+.streamlit/cache/
+.streamlit/config.toml
+
+# Fichiers Jupyter
+*.ipynb_checkpoints
+
+# Dossiers système
+.DS_Store
+Thumbs.db
+
+# Fichiers secrets (si tu en utilises)
+*.env
+.env.*
+
+# Dossier build (si Flutter ou autres outils WebView)
+build/

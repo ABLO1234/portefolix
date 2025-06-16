@@ -1,0 +1,73 @@
+/* ----- Style Global ----- */
+body {
+    background-color: #f9f9fa;
+    font-family: "Segoe UI", sans-serif;
+    color: #3a3636;
+}
+
+h1, h2, h3 {
+    color: #004080;
+}
+
+.stButton>button {
+    background-color: #004080;
+    color: white;
+    border-radius: 8px;
+    padding: 0.5em 1em;
+    border: none;
+}
+
+.stButton>button:hover {
+    background-color: #0066cc;
+}
+
+/* ----- En-tête fixe ----- */
+#header-bar {
+    background-color: #004080;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    box-shadow: 0px 1px 4px rgba(0,0,0,0.1);
+}
+
+#header-bar .title {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+#header-bar .datetime,
+#header-bar .weather {
+    font-size: 0.95rem;
+}
+
+/* ----- Table et contenu ----- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table th, table td {
+    padding: 0.6em;
+    border: 1px solid #ccc;
+}
+
+.stDataFrame {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* ----- Chart responsiveness ----- */
+.css-1kyxreq {
+    overflow-x: auto;
+}
+
+/* Optional: custom tooltip colors */
+div[data-testid="stTooltip"] {
+    background-color: #004080;
+    color: white;
+}
