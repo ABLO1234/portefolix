@@ -676,8 +676,8 @@ def main():
                 st.plotly_chart(fig_pie, use_container_width=True)
 
                 # Monte Carlo pour la simulation de l'actif principal
-    else:
-        st.error("L'optimisation du portefeuille n'a pas pu aboutir. Veuillez vérifier les actifs sélectionnés ou la période de données. Des messages d'erreur spécifiques peuvent apparaître ci-dessus.")
+        else:
+            st.error("L'optimisation du portefeuille n'a pas pu aboutir. Veuillez vérifier les actifs sélectionnés ou la période de données. Des messages d'erreur spécifiques peuvent apparaître ci-dessus.")
 
         # === SECTION ENVOI D'EMAIL ===
         st.sidebar.header("📧 Envoi des résultats par e-mail")
