@@ -10,7 +10,7 @@ from email.message import EmailMessage
 import re
 from bs4 import BeautifulSoup # Moved to global import
 import requests # Moved to global import
-#from statsmodels.tsa.arima.model import ARIMA # Moved to global import
+from statsmodels.tsa.arima.model import ARIMA # Moved to global import
 # import os # Not used
 # import warnings # Not used
 
@@ -259,7 +259,7 @@ def monte_carlo_simulation(start_price, mu, sigma, n_days=252, n_simulations=100
     return fig
 
 # Prediction
-@st.cache_data(ttl=3600)
+
 def predict_with_arima(ticker, start_date, end_date, forecast_days=7, order=(5,1,0)):
     data = get_historical_data([ticker], start_date, end_date)
 
