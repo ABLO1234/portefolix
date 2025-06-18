@@ -675,7 +675,51 @@ def main():
                 fig_pie.update_layout(title_text="Répartition de l'investissement par actif")
                 st.plotly_chart(fig_pie, use_container_width=True)
 
-                # Monte Carlo pour la simulation de l'actif principal
+                # Suivi temps réel
+                st.subheader("📈 Performance en temps réel")
+                latest_prices, current_prices = {}, {}
+                for ticker in dist['Ticker']:
+                    history = prices[ticker].dropna()
+                    if not history.empty:
+                        latest_prices[ticker] = history.iloc[-1]
+    
+                try:
+                    yf_data = yf.download(dist['Ticker'].tolist(), start=datetime.now().date() - timedelta(days=5), end=datetime.now().date() + timedelta(days=1), progress=False)
+                    close_data = yf_data['Close'] if 'Close' in yf_data else pd.DataFrame()
+                    if isinstance(close_data, pd.Series):
+                        close_data = close_data.to_frame()
+                    for ticker in dist['Ticker']:
+                        val = close_data[ticker].dropna() if ticker in close_data else []
+                        if not val.empty:
+                            current_prices[ticker] = val.iloc[-1]
+                except Exception as e:
+                    st.warning(f"Erreur récupération prix actuels : {e}")
+    
+                pnl_data, total_gain = [], 0.0
+                for _, row in dist.iterrows():
+                    ticker = row['Ticker']
+                    amount_invested = row['Invested Amount (€)']
+                    old_price = latest_prices.get(ticker)
+                    new_price = current_prices.get(ticker)
+                    if old_price and new_price:
+                        qty = amount_invested / old_price
+                        value_now = qty * new_price
+                        gain = value_now - amount_invested
+                        pnl_data.append({
+                            "Ticker": ticker,
+                            "Ancien Prix (€)": round(old_price, 2),
+                            "Prix Actuel (€)": round(new_price, 2),
+                            "Gain/Perte (€)": round(gain, 2),
+                            "Variation (%)": round((gain / amount_invested) * 100, 2)
+                        })
+                        total_gain += gain
+    
+                if pnl_data:
+                    df_pnl = pd.DataFrame(pnl_data).set_index("Ticker")
+                    st.dataframe(df_pnl)
+                    st.success(f"📈 Gain estimé : **{total_gain:.2f} €**" if total_gain >= 0 else f"📉 Perte estimée : **{total_gain:.2f} €**")
+                else:
+                    st.warning("Aucune donnée de suivi en temps réel disponible.")
         else:
             st.error("L'optimisation du portefeuille n'a pas pu aboutir. Veuillez vérifier les actifs sélectionnés ou la période de données. Des messages d'erreur spécifiques peuvent apparaître ci-dessus.")
 
