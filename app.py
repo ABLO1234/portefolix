@@ -746,8 +746,7 @@ def main():
             st.error("L'optimisation du portefeuille n'a pas pu être réalisée avec les paramètres fournis. Veuillez vérifier les messages d'erreur ci-dessus.")
 
                 
-            else:
-                st.info("Veuillez entrer un montant à investir pour voir la distribution.")
+            
         else:
             st.error("L'optimisation du portefeuille n'a pas pu aboutir. Veuillez vérifier les actifs sélectionnés ou la période de données. Des messages d'erreur spécifiques peuvent apparaître ci-dessus.")
 
