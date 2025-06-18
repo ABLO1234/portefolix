@@ -9,19 +9,15 @@ import smtplib
 from email.message import EmailMessage
 import re # Importation de re au niveau global
 from bs4 import BeautifulSoup
-
-
 import os
-
+import warnings
 # Pour le modèle ARIMA
-
 from statsmodels.tools.sm_exceptions import HessianInversionWarning, ConvergenceWarning
-
 # Supprimer les avertissements de convergence et d'inversion hessienne
 warnings.filterwarnings("ignore", category=HessianInversionWarning)
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
-import warnings
+
 
 
 # --- Fonctions de modélisation financière ---
