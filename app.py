@@ -7,12 +7,14 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import smtplib
 from email.message import EmailMessage
-import re
-from bs4 import BeautifulSoup # Moved to global import
-import requests # Moved to global import
-#from statsmodels.tsa.arima.model import ARIMA # Moved to global import
-# import os # Not used
-# import warnings # Not used
+import re # Importation de re au niveau global
+from bs4 import BeautifulSoup
+import os
+import warnings
+# Pour le modèle ARIMA
+
+
+
 
 # --- Fonctions de modélisation financière ---
 
@@ -55,6 +57,7 @@ def tickers_taker():
         st.warning("La table trouvée ne contient pas toutes les colonnes attendues (Ticker, Company). Tentative de continuer avec les colonnes disponibles.")
         # Filtrer seulement les colonnes qui existent réellement
         df = df[[col for col in expected_columns if col in df.columns]]
+
 
     # Nettoyage des tickers: Ajout de .PA pour les tickers français si absent
     # Ceci est une heuristique et pourrait nécessiter un ajustement selon les données de yfinance
@@ -258,10 +261,11 @@ def monte_carlo_simulation(start_price, mu, sigma, n_days=252, n_simulations=100
     fig.update_layout(title=f"Simulation Monte Carlo de {actif}", xaxis_title="Jours", yaxis_title="Prix")
     return fig
 
-# Prediction
-
-def predict_with_arima(ticker, start_date, end_date, forecast_days=7, order=(5,1,0)):
-    data = get_historical_data([ticker], start_date, end_date)
+# Predictio
+@st.cache_data(ttl=3600)
+def predict_with_arima(ticker, start_date_str, end_date_str, forecast_days=7, order=(5,1,0)):
+    from statsmodels.tsa.arima.model import ARIMA
+    data = get_historical_data([ticker], start_date_str, end_date_str)
 
     if data is None or data.empty or ticker not in data.columns:
         return {'success': False, 'message': f"Impossible de récupérer les données historiques pour {ticker}. Vérifiez le ticker et la période."}
@@ -370,7 +374,9 @@ def send_mail(mail, weights_df, rendement, volatilite, sharpe):
     try:
         server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
         # Assurez-vous d'utiliser st.secrets pour le mot de passe en production
-        password = st.secrets.get("EMAIL_PASSWORD") # PRÉFÉRÉ: Récupérer depuis les secrets de Streamlit
+        # Pour le test local, vous pouvez utiliser la variable ci-dessous, mais ce n'est PAS SÉCURISÉ.
+        #password = "72228699Gmail" # Votre mot de passe de l'application Gmail ou mot de passe de compte
+        password = st.secrets.get("72228699Gmail") # PRÉFÉRÉ: Récupérer depuis les secrets de Streamlit
 
         if not password:
             st.error("Le mot de passe de l'e-mail n'est pas configuré. Veuillez utiliser st.secrets.")
@@ -378,11 +384,16 @@ def send_mail(mail, weights_df, rendement, volatilite, sharpe):
 
         server.ehlo()
         server.login('abdoulayetangara722@gmail.com', password) 
-        server.send_message(msg)
-        st.info("L'e-mail a été envoyé avec succès.")
-        server.quit()
+        if server.send_message(msg) :
+            st.info("L'e-mail a été envoyé avec succès.")
+            server.quit()
+        else:
+            st.error("L'envoi de l'e-mail a échoué. Veuillez vérifier les paramètres du serveur SMTP ou l'adresse e-mail.")
     except Exception as e:
         st.error(f"Erreur lors de l'envoi de l'e-mail. Vérifiez l'adresse, le mot de passe (si vous utilisez GMail, activez l'authentification à deux facteurs et générez un mot de passe d'application) ou les paramètres du serveur SMTP : {e}")
+
+
+
 
 
 # ===================== 🔐 AUTHENTIFICATION =====================
@@ -398,7 +409,6 @@ USERS = {
 
 import base64
 from io import BytesIO
-from PIL import Image # Moved to global import
 
 def image_to_base64(img):
     buffer = BytesIO()
@@ -407,6 +417,8 @@ def image_to_base64(img):
     return img_str
 
 def login_interface():
+    from PIL import Image
+
     image = Image.open("style/logo.png")
     st.markdown(
         """
@@ -430,7 +442,7 @@ def login_interface():
             st.session_state["authenticated"] = True
             st.session_state["user"] = username
             st.success(f"Bienvenue {username} !")
-            # st.experimental_rerun() # Commented out as per original code, but kept in mind for deprecation
+            #st.experimental_rerun()
         else:
             st.error("Identifiants incorrects.")
 
@@ -447,14 +459,21 @@ def login_interface():
 
 def main():
     st.set_page_config(layout="wide", page_title="PortfoliX", page_icon = "style/blazon.png")
+   
     
     if "authenticated" not in st.session_state:
         st.session_state["authenticated"] = False
 
     if not st.session_state["authenticated"]:
-        login_interface()     
+        login_interface()      
         return
-    
+  
+
+    import requests
+    from bs4 import BeautifulSoup
+    from datetime import datetime
+    import urllib.parse
+
     def get_temperature(city):
         city_query = urllib.parse.quote_plus(f"météo {city}")
         url = f"https://www.google.com/search?q={city_query}"
@@ -484,6 +503,8 @@ def main():
         <div class="weather">🌤️ Bamako | {temperature}°C</div>
     </div>
     """, unsafe_allow_html=True)
+
+
 
 
     with open("style/style.css") as f:
@@ -521,10 +542,10 @@ def main():
             df_plot = df_indiv_data[selected_indiv].dropna()
 
             annuel, rendement = calcul_performance(
-                                selected_indiv,
-                                datetime.now() - timedelta(days=365 * 5),
-                                datetime.now()
-                            )
+                    selected_indiv,
+                    datetime.now() - timedelta(days=365 * 5),
+                    datetime.now()
+                )
             
             if rendement is not None:
 
@@ -552,9 +573,9 @@ def main():
                     close=df_indiv_data[selected_indiv].values
                 )])
                 fig_candlestick.update_layout(title=f"Graphique en chandelier de {selected_indiv}", xaxis_title="Date", yaxis_title="Prix")
-                st.plotly_chart(fig_candlestick, use_container_width=True) # Removed incorrect axxis_visible
-
-            # Simulation Monte Carlo basée sur cet actif
+                st.plotly_chart(fig_candlestick, use_container_width=True,axxis_visible=True)
+        
+                        # Simulation Monte Carlo basée sur cet actif
             mu = annuel
             sigma = df_plot.pct_change().std() * np.sqrt(252)
             fig_mc = monte_carlo_simulation(df_plot.iloc[-1], mu, sigma, actif=selected_indiv)
@@ -562,11 +583,10 @@ def main():
 
         else:
             st.error(f"Aucune donnée disponible pour l'actif sélectionné : {selected_indiv}. Il se peut que le symbole ne soit pas valide ou que la période ne contienne pas de données. Vérifiez les messages d'avertissement ci-dessus.")
-        
-        # --- Nouvelle section pour ARIMA avec les sliders en deux colonnes dans la sidebar ---
+         # --- Nouvelle section pour ARIMA avec les sliders en deux colonnes dans la sidebar ---
         st.sidebar.header(f"Prévision de prix pour {selected_indiv} (Modèle ARIMA)")
             
-        # Utilisation de st.columns pour organiser les sliders dans la sidebar
+            # Utilisation de st.columns pour organiser les sliders dans la sidebar
         col_arima_1, col_arima_2 = st.sidebar.columns(2)
 
         with col_arima_1:
@@ -582,12 +602,12 @@ def main():
         if st.sidebar.button(f"Générer la prévision ARIMA"):
             with st.spinner("Génération de la prévision ARIMA..."):
                 arima_result = predict_with_arima(
-                                selected_indiv,
-                                (datetime.now() - timedelta(days=365 * 2)), # Pass datetime object
-                                datetime.now(), # Pass datetime object
-                                forecast_days=forecast_days_arima,
-                                order=arima_order
-                            )
+                        selected_indiv,
+                        (datetime.now() - timedelta(days=365 * 2)).strftime('%Y-%m-%d'),
+                        datetime.now().strftime('%Y-%m-%d'),
+                        forecast_days=forecast_days_arima,
+                        order=arima_order
+                    )
 
                 if arima_result['success']:
                     st.subheader(f"Prévision de prix pour {selected_indiv} (Modèle ARIMA)")
@@ -653,39 +673,52 @@ def main():
                 )])
                 fig_pie.update_layout(title_text="Répartition de l'investissement par actif")
                 st.plotly_chart(fig_pie, use_container_width=True)
+
+                # Monte Carlo pour la simulation de l'actif principal
+                
             else:
                 st.info("Veuillez entrer un montant à investir pour voir la distribution.")
         else:
             st.error("L'optimisation du portefeuille n'a pas pu aboutir. Veuillez vérifier les actifs sélectionnés ou la période de données. Des messages d'erreur spécifiques peuvent apparaître ci-dessus.")
 
-    # === SECTION ENVOI D'EMAIL ===
-    st.sidebar.header("📧 Envoi des résultats par e-mail")
+        # === SECTION ENVOI D'EMAIL ===
+        st.sidebar.header("📧 Envoi des résultats par e-mail")
 
-    email = st.sidebar.text_input("Adresse e-mail", placeholder="ex: nom@exemple.com", key="email_input")
+        email = st.sidebar.text_input("Adresse e-mail", placeholder="ex: nom@exemple.com", key="email_input")
 
-    # Créer une clé d’état pour le bouton s’il n’existe pas
-    if "email_sent" not in st.session_state:
-        st.session_state["email_sent"] = False
+        # Créer une clé d’état pour le bouton s’il n’existe pas
+        if "email_sent" not in st.session_state:
+            st.session_state["email_sent"] = False
 
 
-    if st.sidebar.button("📤 Envoyer les résultats par e-mail"):
-        if email.strip():
-            if 'weights_df' in locals() and weights_df is not None:
-                try:
-                    if not st.session_state["email_sent"]:
-                        send_mail(email, weights_df, rendement, volatilite, sharpe)
-                        st.success("📧 Les résultats ont été envoyés par e-mail.")
-                        st.session_state["email_sent"] = True
-                    else:
-                        st.info("📨 L'e-mail a déjà été envoyé dans cette session.")
-                except Exception as e:
-                    st.error(f"❌ Erreur lors de l'envoi de l'e-mail : {e}")
+        if st.sidebar.button("📤 Envoyer les résultats par e-mail"):
+            if email.strip():
+                if 'weights_df' in locals() and weights_df is not None:
+                    try:
+                        if not st.session_state["email_sent"]:
+                            send_mail(email, weights_df, rendement, volatilite, sharpe)
+                            st.success("📧 Les résultats ont été envoyés par e-mail.")
+                            st.session_state["email_sent"] = True
+                        else:
+                            st.info("📨 L'e-mail a déjà été envoyé dans cette session.")
+                    except Exception as e:
+                        st.error(f"❌ Erreur lors de l'envoi de l'e-mail : {e}")
+                else:
+                    st.warning("⚠️ Veuillez d'abord optimiser un portefeuille.")
             else:
-                st.warning("⚠️ Veuillez d'abord optimiser un portefeuille.")
-        else:
-            st.warning("⚠️ Veuillez entrer une adresse e-mail valide.")
-    elif st.session_state.get("email_sent", False): # This else if is cleaner than just an 'else' with the incomplete "Vo"
-        st.info("📨 Les résultats ont déjà été envoyés par e-mail dans cette session.")
+                st.warning("⚠️ Veuillez entrer une adresse e-mail valide.")
+        else :
+            if st.session_state.get("email_sent", False):
+                st.info("📨 Les résultats ont déjà été envoyés par e-mail dans cette session. Vous pouvez les consulter dans votre boîte de réception.")
+            else:
+                st.info("📧 Entrez une adresse e-mail pour recevoir les résultats de l'optimisation du portefeuille.")   
 
-if __name__ == '__main__':
+    st.sidebar.markdown("---")
+    st.sidebar.info("© 2025 Abdoulaye Tangara. Tous droits réservés.")
+
+    if st.sidebar.button("🔓 Se déconnecter"):
+        st.session_state["authenticated"] = False
+        #st.experimental_rerun()
+
+if __name__ == "__main__":
     main()
