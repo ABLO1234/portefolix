@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 import os
 
 # Pour le modèle ARIMA
-from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.arima_model import ARIMA
 from statsmodels.tools.sm_exceptions import HessianInversionWarning, ConvergenceWarning
 
 # Supprimer les avertissements de convergence et d'inversion hessienne
