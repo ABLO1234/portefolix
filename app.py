@@ -679,7 +679,7 @@ def main():
                 st.subheader("📈 Performance en temps réel")
                 latest_prices, current_prices = {}, {}
                 for ticker in dist['Ticker']:
-                    history = prices[ticker].dropna()
+                    history = full_data_opt[ticker].dropna()
                     if not history.empty:
                         latest_prices[ticker] = history.iloc[-1]
     
