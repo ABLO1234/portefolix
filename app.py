@@ -659,11 +659,11 @@ def main():
 
             st.markdown("---")
             st.subheader("💰 Distribution de l'investissement")
-            total_invest = st.number_input("Somme à investir (€)", min_value=0.0, value=100000.0, step=1000.0)
+            #total_invest = st.number_input("Somme à investir (€)", min_value=0.0, value=100000.0, step=1000.0)
 
             if total_invest > 0:
                 dist = weights_df.copy()
-                dist['Invested Amount (€)'] = np.round(dist['Optimal Weight'] * total_invest, 2)
+                dist['Invested Amount (€)'] = np.round(dist['Optimal Weight'] * amount, 2)
                 st.dataframe(dist.set_index('Ticker'))
 
                 # Graphique en secteurs pour la distribution
