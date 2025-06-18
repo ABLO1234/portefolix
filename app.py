@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 import os
 
 # Pour le modèle ARIMA
-from statsmodels.tsa.arima_model import ARIMA
+
 from statsmodels.tools.sm_exceptions import HessianInversionWarning, ConvergenceWarning
 
 # Supprimer les avertissements de convergence et d'inversion hessienne
@@ -272,7 +272,7 @@ def monte_carlo_simulation(start_price, mu, sigma, n_days=252, n_simulations=100
 # Predictio
 @st.cache_data(ttl=3600)
 def predict_with_arima(ticker, start_date_str, end_date_str, forecast_days=7, order=(5,1,0)):
-    
+    from statsmodels.tsa.arima.model import ARIMA
     data = get_historical_data([ticker], start_date_str, end_date_str)
 
     if data is None or data.empty or ticker not in data.columns:
