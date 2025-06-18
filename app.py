@@ -675,6 +675,75 @@ def main():
                 st.plotly_chart(fig_pie, use_container_width=True)
 
                 # Monte Carlo pour la simulation de l'actif principal
+                        # ================== Suivi des performances en temps réel ==================
+            st.subheader("📈 Suivi en temps réel de l’investissement")
+
+            latest_prices = {}
+            current_prices = {}
+
+            for ticker in dist['Ticker']:
+                series = full_data_opt[ticker].dropna()
+                if not series.empty:
+                    latest_prices[ticker] = series.iloc[-1]
+
+            today = datetime.now().date()
+            try:
+                yf_data = yf.download(dist['Ticker'].tolist(), start=today - timedelta(days=5), end=today + timedelta(days=1), progress=False)
+                if 'Close' in yf_data.columns:
+                    current_data = yf_data['Close']
+                    if isinstance(current_data, pd.Series):
+                        current_data = current_data.to_frame()
+                    for ticker in dist['Ticker']:
+                        if ticker in current_data.columns:
+                            latest_value = current_data[ticker].dropna()
+                            if not latest_value.empty:
+                                current_prices[ticker] = latest_value.iloc[-1]
+            except Exception as e:
+                st.warning(f"Erreur lors de la récupération des prix actuels : {e}")
+
+            gain_loss_data = []
+            total_gain = 0.0
+            for _, row in dist.iterrows():
+                ticker = row['Ticker']
+                amount_invested = row['Invested Amount (€)']
+                old_price = latest_prices.get(ticker)
+                new_price = current_prices.get(ticker)
+
+                if old_price and new_price:
+                    quantity = amount_invested / old_price
+                    new_value = quantity * new_price
+                    gain = new_value - amount_invested
+                    gain_loss_data.append({
+                        "Ticker": ticker,
+                        "Ancien Prix (€)": round(old_price, 2),
+                        "Prix Actuel (€)": round(new_price, 2),
+                        "Gain/Perte (€)": round(gain, 2),
+                        "Variation (%)": round((gain / amount_invested) * 100, 2)
+                    })
+                    total_gain += gain
+
+            if gain_loss_data:
+                gain_df = pd.DataFrame(gain_loss_data).set_index("Ticker")
+                st.dataframe(gain_df)
+
+                if total_gain >= 0:
+                    st.success(f"📈 Gain actuel estimé : **{total_gain:.2f} €**")
+                else:
+                    st.error(f"📉 Perte actuelle estimée : **{total_gain:.2f} €**")
+            else:
+                st.warning("Impossible de récupérer les prix actuels pour les actifs sélectionnés.")
+
+            st.markdown("---")
+            st.subheader("📧 Envoyer le portefeuille par e-mail")
+            email_to_send = st.text_input("Votre adresse e-mail")
+            if st.button("Envoyer le portefeuille"):
+                if email_to_send and re.match(r"[^@]+@[^@]+\.[^@]+", email_to_send):
+                    send_portfolio_email(email_to_send, weights_df, rendement, volatilite, sharpe)
+                else:
+                    st.error("Veuillez entrer une adresse e-mail valide.")
+        else:
+            st.error("L'optimisation du portefeuille n'a pas pu être réalisée avec les paramètres fournis. Veuillez vérifier les messages d'erreur ci-dessus.")
+
                 
             else:
                 st.info("Veuillez entrer un montant à investir pour voir la distribution.")
