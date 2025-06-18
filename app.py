@@ -15,6 +15,11 @@ import os
 
 # Pour le modèle ARIMA
 from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tools.sm_exceptions import HessianInversionWarning, ConvergenceWarning
+
+# Supprimer les avertissements de convergence et d'inversion hessienne
+warnings.filterwarnings("ignore", category=HessianInversionWarning)
+warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 import warnings
 
