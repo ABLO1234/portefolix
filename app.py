@@ -15,6 +15,7 @@ import os
 
 # Pour le modèle ARIMA
 from statsmodels.tsa.arima.model import ARIMA
+
 import warnings
 
 
