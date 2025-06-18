@@ -10,7 +10,7 @@ from email.message import EmailMessage
 import re
 from bs4 import BeautifulSoup # Moved to global import
 import requests # Moved to global import
-from statsmodels.tsa.arima.model import ARIMA # Moved to global import
+#from statsmodels.tsa.arima.model import ARIMA # Moved to global import
 # import os # Not used
 # import warnings # Not used
 
