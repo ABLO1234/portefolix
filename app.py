@@ -637,6 +637,7 @@ def main():
     end_date_opt = st.sidebar.date_input("Date de fin", datetime.now())
     start_date_opt = st.sidebar.date_input("Date de début des données pour l'optimisation", value=end_date_opt - timedelta(days=365 * 5))
     risk_free_rate_opt = st.sidebar.slider("Taux sans risque annuel (%)", 0.0, 10.0, 2.0, 0.1) / 100
+    amount = st.sidebar.number_input("💰 Montant à investir (€)", min_value=0.0, value=100000.0, step=1000.0)
 
     if st.sidebar.button("✨ Optimiser le Portefeuille"):
         if not selected_tickers_for_opt:
