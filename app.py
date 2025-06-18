@@ -255,6 +255,73 @@ def monte_carlo_simulation(start_price, mu, sigma, n_days=252, n_simulations=100
     fig.update_layout(title=f"Simulation Monte Carlo de {actif}", xaxis_title="Jours", yaxis_title="Prix")
     return fig
 
+# Predictio
+@st.cache_data(ttl=3600)
+def predict_with_arima(ticker, start_date_str, end_date_str, forecast_days=7, order=(5,1,0)):
+    data = get_historical_data([ticker], start_date_str, end_date_str)
+
+    if data is None or data.empty or ticker not in data.columns:
+        return {'success': False, 'message': f"Impossible de récupérer les données historiques pour {ticker}. Vérifiez le ticker et la période."}
+
+    series = data[ticker].dropna()
+
+    if len(series) < sum(order) + 1:
+        return {'success': False, 'message': f"Pas assez de données historiques pour entraîner le modèle ARIMA pour {ticker} avec l'ordre {order}. Minimum de {sum(order) + 1} jours requis."}
+    
+    try:
+        model = ARIMA(series, order=order)
+        model_fit = model.fit()
+    except Exception as e:
+        return {'success': False, 'message': f"Erreur lors de l'entraînement du modèle ARIMA pour {ticker}: {e}. Essayez de modifier l'ordre (p,d,q) ou la période de données."}
+
+    last_date = series.index[-1]
+    forecast_dates_candidate = pd.date_range(start=last_date + timedelta(days=1), periods=forecast_days * 2, freq='D')
+    forecast_index = forecast_dates_candidate[forecast_dates_candidate.dayofweek < 5][:forecast_days]
+
+    try:
+        forecast_result = model_fit.get_forecast(steps=forecast_days)
+        forecast_mean = forecast_result.predicted_mean
+    except Exception as e:
+        return {'success': False, 'message': f"Erreur lors de la génération de la prévision ARIMA pour {ticker}: {e}. Le modèle peut être instable."}
+
+    if len(forecast_mean) != len(forecast_index):
+        st.warning(f"ARIMA a prédit {len(forecast_mean)} étapes au lieu de {forecast_days}. Ajustement de l'index des prévisions.")
+        forecast_index = forecast_index[:len(forecast_mean)]
+
+    forecast_mean.index = forecast_index
+    
+    historical_trace = go.Scatter(
+        x=series.index,
+        y=series.tolist(),
+        mode='lines',
+        name='Historique'
+    )
+
+    forecast_trace = go.Scatter(
+        x=forecast_mean.index,
+        y=forecast_mean.tolist(),
+        mode='lines',
+        name=f'Prévision ARIMA ({forecast_days} jours)',
+        line=dict(dash='dash', color='red')
+    )
+    
+    plot_data = [historical_trace, forecast_trace]
+
+    fig = go.Figure(data=plot_data)
+    fig.update_layout(
+        title=f"Prédiction du prix de {ticker} avec ARIMA {order}",
+        xaxis_title="Date",
+        yaxis_title="Prix de clôture",
+        hovermode='x unified'
+    )
+
+    return {
+        'success': True,
+        'plot': fig,
+        'forecast_days': forecast_days,
+        'future_prices': list(zip([d.strftime('%Y-%m-%d') for d in forecast_mean.index], np.round(forecast_mean.tolist(), 2).tolist())),
+        'message': f"Prévision générée pour {ticker} sur {forecast_days} jours avec ARIMA {order}."
+    }
 
 
 # Fonction pour l'envoi d'e-mail
@@ -509,6 +576,41 @@ def main():
 
         else:
             st.error(f"Aucune donnée disponible pour l'actif sélectionné : {selected_indiv}. Il se peut que le symbole ne soit pas valide ou que la période ne contienne pas de données. Vérifiez les messages d'avertissement ci-dessus.")
+         # --- Nouvelle section pour ARIMA avec les sliders en deux colonnes dans la sidebar ---
+        st.sidebar.header(f"Prévision de prix pour {selected_indiv} (Modèle ARIMA)")
+            
+            # Utilisation de st.columns pour organiser les sliders dans la sidebar
+        col_arima_1, col_arima_2 = st.sidebar.columns(2)
+
+        with col_arima_1:
+            forecast_days_arima = st.slider("Nombre de jours de prévision", 7, 60, 30, key="forecast_days_arima")
+            
+        with col_arima_2:
+            p_arima = st.slider("Ordre p (AR)", 0, 10, 5, key="p_arima")
+            d_arima = st.slider("Ordre d (I)", 0, 2, 1, key="d_arima")
+            q_arima = st.slider("Ordre q (MA)", 0, 10, 0, key="q_arima")
+            
+        arima_order = (p_arima, d_arima, q_arima)
+
+        if st.sidebar.button(f"Générer la prévision ARIMA"):
+            with st.spinner("Génération de la prévision ARIMA..."):
+                arima_result = predict_with_arima(
+                        selected_indiv,
+                        (datetime.now() - timedelta(days=365 * 2)).strftime('%Y-%m-%d'),
+                        datetime.now().strftime('%Y-%m-%d'),
+                        forecast_days=forecast_days_arima,
+                        order=arima_order
+                    )
+
+                if arima_result['success']:
+                    st.subheader(f"Prévision de prix pour {selected_indiv} (Modèle ARIMA)")
+                    st.plotly_chart(arima_result['plot'], use_container_width=True)
+                    st.write(f"Prix futurs prévus pour {selected_indiv} :")
+                    for date_str, price in arima_result['future_prices']:
+                        st.write(f"- **{date_str}**: {price:.2f} €")
+                else:
+                    st.error(arima_result['message'])
+        st.sidebar.markdown("---") # Séparateur après les options ARIMA
 
 
     # === SECTION OPTIMISATION DE PORTEFEUILLE ===
