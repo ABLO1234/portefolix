@@ -618,7 +618,6 @@ def main():
                 if arima_result['success']:
                     st.subheader(f"Prévision de prix pour {company} ({selected_indiv})")
                     st.plotly_chart(arima_result['plot'], use_container_width=True)
-                    st.write(f"Prix futurs prévus pour {company} ({selected_indiv}) :")
                     future_prices = {
                         pd.to_datetime(date_str): price
                         for date_str, price in arima_result['future_prices']
