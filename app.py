@@ -258,7 +258,7 @@ def monte_carlo_simulation(start_price, mu, sigma, n_days=252, n_simulations=100
     fig = go.Figure()
     for i in range(n_simulations):
         fig.add_trace(go.Scatter(y=simulations[:, i], mode='lines', line=dict(width=1), opacity=0.3))
-    fig.update_layout(title=f"Simulation Monte Carlo de {actif}", xaxis_title="Jours", yaxis_title="Prix")
+    fig.update_layout(title=f"Evolution potentielle du prix de {actif}", xaxis_title="Jours", yaxis_title="Prix")
     return fig
 
 # Predictio
@@ -531,7 +531,8 @@ def main():
         options=tickers_df['Ticker'].tolist(),
         index=0
     )
-
+    company = tickers_df[tickers_df['Ticker'] == selected_indiv]['Company'].values[0]
+    
 
     if selected_indiv:
 
@@ -546,24 +547,29 @@ def main():
                     datetime.now() - timedelta(days=365 * 5),
                     datetime.now()
                 )
+            col00, col11 = st.columns(2)
             
             if rendement is not None:
 
                 if rendement > 0:
-                    st.info(f"**{selected_indiv}** a un rendement annuel de **{annuel:.2%}**.")
-                    st.success(f"**{selected_indiv}** a un rendement journalier positif de **{rendement:.2%}**.")
+                        with col00 :
+                            st.info(f"**{selected_indiv}** a un rendement annuel de **{annuel:.2%}**.")
+                        with col11:
+                            st.success(f"**{selected_indiv}** a un rendement journalier positif de **{rendement:.2%}**.")
                 else:
-                    st.info(f"**{selected_indiv}** a un rendement annuel de **{annuel:.2%}**.")
-                    st.warning(f"**{selected_indiv}** a un rendement journalier négatif de **{rendement:.2%}**.")
+                    with col00:
+                        st.info(f"**{selected_indiv}** a un rendement annuel de **{annuel:.2%}**.")
+                    with col11:
+                        st.warning(f"**{selected_indiv}** a un rendement journalier négatif de **{rendement:.2%}**.")
 
             col1, col2 = st.columns(2)
-            with col1:
+            with col2:
                 
                 fig = go.Figure(data=[go.Scatter(x=df_plot.index, y=df_plot.values, mode='lines', name=selected_indiv)])
                 fig.update_layout(title=f"Cours de clôture ajusté de {selected_indiv}", xaxis_title="Date", yaxis_title="Prix")
                 st.plotly_chart(fig, use_container_width=True)
 
-            with col2:
+            with col1:
                 
                 fig_candlestick = go.Figure(data=[go.Candlestick(
                     x=df_indiv_data.index,
@@ -584,22 +590,22 @@ def main():
         else:
             st.error(f"Aucune donnée disponible pour l'actif sélectionné : {selected_indiv}. Il se peut que le symbole ne soit pas valide ou que la période ne contienne pas de données. Vérifiez les messages d'avertissement ci-dessus.")
          # --- Nouvelle section pour ARIMA avec les sliders en deux colonnes dans la sidebar ---
-        st.sidebar.header(f"Prévision de prix pour {selected_indiv} (Modèle ARIMA)")
+        st.sidebar.header(f"Prévision de prix de l'actif {company}")
             
             # Utilisation de st.columns pour organiser les sliders dans la sidebar
         col_arima_1, col_arima_2 = st.sidebar.columns(2)
 
         with col_arima_1:
-            forecast_days_arima = st.slider("Nombre de jours de prévision", 7, 60, 30, key="forecast_days_arima")
+            forecast_days_arima = st.slider("Nombre de jours de prévision", 7, 60, 30, key="forecast_days_arima", help="Le nombre de jour que je veux prévoir")
             
         with col_arima_2:
-            p_arima = st.slider("Ordre p (AR)", 0, 10, 5, key="p_arima")
-            d_arima = st.slider("Ordre d (I)", 0, 2, 1, key="d_arima")
-            q_arima = st.slider("Ordre q (MA)", 0, 10, 0, key="q_arima")
+            p_arima = st.slider("Mémoire", 0, 10, 5, key="p_arima",help="Le nombre de valeur passées à utiliser")
+            d_arima = 1
+            q_arima = st.slider("Correction d'erreur", 0, 10, 0, key="q_arima", help="Le nombre d'erreurs passées à utiliser pour corriger la prévision")
             
         arima_order = (p_arima, d_arima, q_arima)
 
-        if st.sidebar.button(f"Générer la prévision ARIMA"):
+        if st.sidebar.button(f"Prédire le prix de l'actif {company}"):
             with st.spinner("Génération de la prévision ARIMA..."):
                 arima_result = predict_with_arima(
                         selected_indiv,
@@ -610,18 +616,28 @@ def main():
                     )
 
                 if arima_result['success']:
-                    st.subheader(f"Prévision de prix pour {selected_indiv} (Modèle ARIMA)")
+                    st.subheader(f"Prévision de prix pour {company} ({selected_indiv})")
                     st.plotly_chart(arima_result['plot'], use_container_width=True)
-                    st.write(f"Prix futurs prévus pour {selected_indiv} :")
-                    for date_str, price in arima_result['future_prices']:
-                        st.write(f"- **{date_str}**: {price:.2f} €")
+                    st.write(f"Prix futurs prévus pour {company} ({selected_indiv}) :")
+                    future_prices = {
+                        pd.to_datetime(date_str): price
+                        for date_str, price in arima_result['future_prices']
+                    }
+
+                    df_future = pd.DataFrame.from_dict(
+                        future_prices, orient='index', columns=['Prix Prévu']
+                    ).sort_index()
+                    df_future.index.name = 'Date'
+
+                    st.dataframe(df_future)
+
                 else:
                     st.error(arima_result['message'])
         st.sidebar.markdown("---") # Séparateur après les options ARIMA
 
 
     # === SECTION OPTIMISATION DE PORTEFEUILLE ===
-    st.sidebar.header("⚙️ Paramètres du portefeuille")
+    st.sidebar.header("Paramètres votre portefeuille d'investissement")
     # Utiliser les tickers du CAC 40 comme valeurs par défaut pour l'optimisation
     # Assurez-vous que ces tickers sont bien les versions .PA/.AS de yfinance si applicable
     all_cac_tickers = tickers_df['Ticker'].tolist()
@@ -629,17 +645,18 @@ def main():
     default_selected_tickers_for_opt = all_cac_tickers[:min(len(all_cac_tickers), 10)] 
 
     selected_tickers_for_opt = st.sidebar.multiselect(
-        "Sélectionnez les symboles boursiers à inclure dans le portefeuille",
+        "Veuillez sélectionner les actifs à inclure dans votre portefeuille",
         options=all_cac_tickers,
         default=default_selected_tickers_for_opt
     )
+    st.sidebar.write(" Veuillez sélectionner la période de la collecte des données")
 
     end_date_opt = st.sidebar.date_input("Date de fin", datetime.now())
     start_date_opt = st.sidebar.date_input("Date de début des données pour l'optimisation", value=end_date_opt - timedelta(days=365 * 5))
     risk_free_rate_opt = st.sidebar.slider("Taux sans risque annuel (%)", 0.0, 10.0, 2.0, 0.1) / 100
-    amount = st.sidebar.number_input("💰 Montant à investir (€)", min_value=0.0, value=100000.0, step=1000.0)
+    amount = st.sidebar.number_input("Veuillez en renseigner un Montant en (€)", min_value=0.0, value=100000.0, step=1000.0,help = "Il s'agit du montant que vous souhaitez investir")
 
-    if st.sidebar.button("✨ Optimiser le Portefeuille"):
+    if st.sidebar.button("✨ Optimiser votre portefeuille"):
         if not selected_tickers_for_opt:
             st.warning("⚠️ Veuillez sélectionner au moins un symbole boursier pour l'optimisation.")
             return
@@ -651,14 +668,17 @@ def main():
 
         if all(x is not None for x in [weights_df, rendement, volatilite, sharpe, full_data_opt]):
             st.subheader("Résultat de l'optimisation du portefeuille")
+            st.markdown("**Les poids optimaux associés à chaque actif dans le portefeuille**")
             st.dataframe(weights_df.set_index('Ticker'))
 
-            st.write(f"**Rendement annuel attendu :** {rendement:.2%}")
-            st.write(f"**Volatilité annuelle :** {volatilite:.2%}")
-            st.write(f"**Ratio de Sharpe :** {sharpe:.2f}")
+            col3, col4 = st.columns(2)
+            with col3 :
+                st.markdown(f"**Rendement annuel attendu :** {rendement:.2%}")
+                st.markdown(f"**Volatilité annuelle :** {volatilite:.2%}")
+            with col4:
+                st.markdown(f"**Ratio de Sharpe :** {sharpe:.2f}")
 
-            st.markdown("---")
-            st.subheader("💰 Distribution de l'investissement")
+            st.subheader("Distribution de l'investissement", help="Il s'agit de la répartition du montant à investir selon les poids optimaux")
             #total_invest = st.number_input("Somme à investir (€)", min_value=0.0, value=100000.0, step=1000.0)
 
             if amount > 0:
@@ -676,7 +696,7 @@ def main():
                 st.plotly_chart(fig_pie, use_container_width=True)
 
                 # Suivi temps réel
-                st.subheader("📈 Performance en temps réel")
+                st.subheader("Performance en temps réel")
                 latest_prices, current_prices = {}, {}
                 for ticker in dist['Ticker']:
                     history = full_data_opt[ticker].dropna()
